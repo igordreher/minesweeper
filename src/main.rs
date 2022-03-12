@@ -12,6 +12,11 @@ fn main() {
         height: 800.,
         ..Default::default()
     })
+    .insert_resource(board::TileMap {
+        height: 10,
+        width: 10,
+        bombs: 10,
+    })
     .add_plugins(DefaultPlugins)
     .add_plugin(board::BoardPlugin);
 

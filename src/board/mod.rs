@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 mod tile;
 
+pub use tile::TileMap;
+
 pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
@@ -9,31 +11,30 @@ impl Plugin for BoardPlugin {
     }
 }
 
-fn create_board(mut commands: Commands) {
-    let tile_map = tile::TileMap::new(10, 10, 5);
-
+fn create_board(mut commands: Commands, map: Res<TileMap>) {
     let tile_size = 50.0;
     let offset = Vec3::new(
-        ((tile_map.width - 1) as f32) * tile_size / 2.,
-        ((tile_map.height - 1) as f32) * tile_size / 2.,
+        ((map.width - 1) as f32) * tile_size / 2.,
+        ((map.height - 1) as f32) * tile_size / 2.,
         1.,
     );
-    let mut sprites = vec![];
 
-    for y in 0..tile_map.height {
-        for x in 0..tile_map.width {
+    for y in 0..map.height {
+        for x in 0..map.width {
             let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 1.);
-            sprites.push(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::GRAY,
-                    custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+            let mut entity = commands.spawn();
+
+            entity
+                .insert_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::GRAY,
+                        custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(pos - offset),
                     ..Default::default()
-                },
-                transform: Transform::from_translation(pos - offset),
-                ..Default::default()
-            })
+                })
+                .insert(tile::Tile::Empty);
         }
     }
-
-    commands.spawn_batch(sprites);
 }
