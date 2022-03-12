@@ -1,13 +1,17 @@
 use bevy::prelude::*;
+pub mod input;
 mod tile;
 
-pub use tile::TileMap;
+pub use tile::*;
 
 pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_startup_system(create_board);
+        app.add_event::<RevealTileEvent>()
+            .add_event::<MarkTileEvent>()
+            .add_startup_system(create_board)
+            .add_system(reveal_tile);
     }
 }
 
@@ -34,7 +38,8 @@ fn create_board(mut commands: Commands, map: Res<TileMap>) {
                     transform: Transform::from_translation(pos - offset),
                     ..Default::default()
                 })
-                .insert(tile::Tile::Empty);
+                .insert(tile::Tile::Empty)
+                .insert(Coord { x, y });
         }
     }
 }
