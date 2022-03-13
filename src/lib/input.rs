@@ -1,5 +1,5 @@
-use crate::board::*;
-use bevy::{input::mouse::MouseButtonInput, prelude::*};
+use crate::lib::*;
+use bevy::{input::mouse::MouseButtonInput};
 
 pub fn send_click_events(
     windows: Res<Windows>,

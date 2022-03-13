@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-mod board;
+mod lib;
 
-use board::input;
+use lib::input;
 
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
@@ -14,13 +14,13 @@ fn main() {
         height: 800.,
         ..Default::default()
     })
-    .insert_resource(board::TileMap {
+    .insert_resource(lib::TileMap {
         height: 10,
         width: 10,
         bombs: 10,
     })
     .add_plugins(DefaultPlugins)
-    .add_plugin(board::BoardPlugin);
+    .add_plugin(lib::BoardPlugin);
 
     #[cfg(feature = "debug")]
     app.add_plugin(WorldInspectorPlugin::new());
