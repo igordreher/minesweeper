@@ -8,7 +8,7 @@ pub enum Tile {
     BombNeighbour(u8),
 }
 
-#[derive(Debug, Component, PartialEq, Hash, Eq, Clone, Copy)]
+#[derive(Debug, Component, Hash, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Coord {
     pub x: u16,
     pub y: u16,
