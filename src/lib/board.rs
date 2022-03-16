@@ -47,9 +47,6 @@ struct TupleUniform(Uniform<u16>, Uniform<u16>);
 
 impl TupleUniform {
     pub fn new(low: &(u16, u16), high: &(u16, u16)) -> Self {
-        Self(
-            Uniform::new_inclusive(low.0, high.0),
-            Uniform::new_inclusive(low.1, high.1),
-        )
+        Self(Uniform::new(low.0, high.0), Uniform::new(low.1, high.1))
     }
 }
