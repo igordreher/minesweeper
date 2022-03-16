@@ -14,10 +14,10 @@ fn main() {
         height: 800.,
         ..Default::default()
     })
-    .insert_resource(lib::TileMap {
-        height: 10,
-        width: 10,
-        bombs: 10,
+    .insert_resource(lib::BoardSettings {
+        board_size: (10, 10),
+        tile_size: 50.,
+        bomb_count: 10,
     })
     .add_plugins(DefaultPlugins)
     .add_plugin(lib::BoardPlugin);

@@ -1,36 +1,40 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
 mod board;
 pub mod input;
 mod tile;
 
-use board::Board;
+use board::*;
 pub use tile::*;
 
 pub struct BoardPlugin;
+pub use board::BoardSettings;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_event::<RevealTileEvent>()
             .add_event::<MarkTileEvent>()
-            .insert_resource(board::Board {
-                covered_tiles: HashMap::default(),
-            })
+            .insert_resource(board::Board::default())
             .add_startup_system(create_board)
             .add_system(reveal_tile);
     }
 }
 
-fn create_board(mut commands: Commands, map: Res<TileMap>, mut board_res: ResMut<Board>) {
-    let tile_size = 50.0;
+fn create_board(mut commands: Commands, board: Res<BoardSettings>, mut board_res: ResMut<Board>) {
+    let (width, height) = board.board_size;
+
     let offset = Vec3::new(
-        ((map.width - 1) as f32) * tile_size / 2.,
-        ((map.height - 1) as f32) * tile_size / 2.,
+        ((width - 1) as f32) * board.tile_size / 2.,
+        ((height - 1) as f32) * board.tile_size / 2.,
         1.,
     );
 
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 1.);
+    for y in 0..height {
+        for x in 0..width {
+            let pos = Vec3::new(
+                (x as f32) * board.tile_size,
+                (y as f32) * board.tile_size,
+                1.,
+            );
             let mut entity = commands.spawn();
             let coord = Coord { x, y };
 
@@ -38,13 +42,12 @@ fn create_board(mut commands: Commands, map: Res<TileMap>, mut board_res: ResMut
                 .insert_bundle(SpriteBundle {
                     sprite: Sprite {
                         color: Color::GRAY,
-                        custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                        custom_size: Some(Vec2::new(board.tile_size - 1., board.tile_size - 1.)),
                         ..Default::default()
                     },
                     transform: Transform::from_translation(pos - offset),
                     ..Default::default()
                 })
-                .insert(Tile::Empty)
                 .insert(coord);
 
             board_res

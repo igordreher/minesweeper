@@ -1,7 +1,7 @@
 use super::board::Board;
 use bevy::prelude::*;
 
-#[derive(Debug, Component)]
+#[derive(Debug)]
 pub enum Tile {
     Empty,
     Bomb,
@@ -12,12 +12,6 @@ pub enum Tile {
 pub struct Coord {
     pub x: u16,
     pub y: u16,
-}
-
-pub struct TileMap {
-    pub height: u16,
-    pub width: u16,
-    pub bombs: u16,
 }
 
 pub fn reveal_tile(
