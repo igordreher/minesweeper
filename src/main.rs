@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 mod lib;
 
-use lib::input;
-
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::WorldInspectorPlugin;
 
@@ -26,7 +24,6 @@ fn main() {
     app.add_plugin(WorldInspectorPlugin::new());
 
     app.add_startup_system(camera_setup);
-    app.add_system(input::send_click_events);
     app.run();
 }
 

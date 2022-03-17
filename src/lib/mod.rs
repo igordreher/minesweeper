@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 mod board;
-pub mod input;
+mod input;
 mod tile;
 
 use board::*;
-pub use tile::*;
+use tile::*;
 
 pub struct BoardPlugin;
 pub use board::BoardSettings;
@@ -15,6 +15,7 @@ impl Plugin for BoardPlugin {
             .add_event::<MarkTileEvent>()
             .insert_resource(board::Board::default())
             .add_startup_system(create_board)
+            .add_system(input::send_click_events)
             .add_system(reveal_tile)
             .add_system(mark_tile)
             .add_system(unmark_tile);
