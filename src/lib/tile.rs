@@ -133,16 +133,56 @@ impl From<Vec2> for Coord {
 impl Coord {
     pub fn neighbours(&self) -> Vec<Self> {
         let mut vec = Vec::new();
-        for x in self.x.saturating_sub(1)..self.x + 2 {
-            vec.push(Self {
-                x,
-                y: self.y.saturating_sub(1),
-            });
-            vec.push(Self { x, y: self.y + 1 });
-            if x != self.x {
-                vec.push(Self { x, y: self.y });
+        for y in self.y.saturating_sub(1)..self.y + 2 {
+            for x in self.x.saturating_sub(1)..self.x + 2 {
+                if self.x == x && self.y == y {
+                    continue;
+                };
+                vec.push(Self { x, y })
             }
         }
         vec
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_bring_neighbours() {
+        let coord = Coord { x: 1, y: 1 };
+        let mut neighbours = coord.neighbours();
+        let mut result = vec![
+            Coord { x: 0, y: 0 },
+            Coord { x: 0, y: 1 },
+            Coord { x: 0, y: 2 },
+            Coord { x: 1, y: 0 },
+            Coord { x: 1, y: 2 },
+            Coord { x: 2, y: 0 },
+            Coord { x: 2, y: 1 },
+            Coord { x: 2, y: 2 },
+        ];
+
+        neighbours.sort();
+        result.sort();
+
+        assert_eq!(neighbours, result);
+    }
+
+    #[test]
+    fn should_not_bring_corners() {
+        let coord = Coord { x: 0, y: 0 };
+        let mut neighbours = coord.neighbours();
+        let mut result = vec![
+            Coord { x: 0, y: 1 },
+            Coord { x: 1, y: 0 },
+            Coord { x: 1, y: 1 },
+        ];
+
+        neighbours.sort();
+        result.sort();
+
+        assert_eq!(neighbours, result);
     }
 }
