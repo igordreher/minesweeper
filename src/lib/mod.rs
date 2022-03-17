@@ -15,11 +15,13 @@ impl Plugin for BoardPlugin {
             .add_event::<MarkTileEvent>()
             .insert_resource(board::Board::default())
             .add_startup_system(create_board)
-            .add_system(reveal_tile);
+            .add_system(reveal_tile)
+            .add_system(mark_tile)
+            .add_system(unmark_tile);
     }
 }
 
-fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, mut board: ResMut<Board>) {
+fn create_board(mut commands: Commands, board_set: Res<BoardSettings>) {
     let (width, height) = board_set.board_size;
     let tile_size = board_set.tile_size;
     let bombs = Board::gen_bombs((width, height), board_set.bomb_count);
@@ -27,21 +29,32 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, mut board
     let offset = Vec3::new(
         ((width - 1) as f32) * tile_size / 2.,
         ((height - 1) as f32) * tile_size / 2.,
-        1.,
+        0.,
     );
 
-    let mut uncovered_tiles = Vec::new();
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            color: Color::BLACK,
+            custom_size: Some(Vec2::new(
+                width as f32 * tile_size,
+                height as f32 * tile_size,
+            )),
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(0., 0., 0.),
+        ..Default::default()
+    });
 
     for y in 0..height {
         for x in 0..width {
-            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 1.);
+            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 2.);
             let mut entity = commands.spawn();
             let coord = Coord { x, y };
             let mut tile = Tile::Empty;
 
             if bombs.contains(&coord) {
                 tile = Tile::Bomb;
-                uncovered_tiles.push(SpriteBundle {
+                entity.insert_bundle(SpriteBundle {
                     sprite: Sprite {
                         color: Color::RED,
                         custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
@@ -52,7 +65,7 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, mut board
                 });
             } else if let Some(count) = count_neighbour_bombs(&bombs, &coord) {
                 tile = Tile::BombNeighbour(count);
-                uncovered_tiles.push(SpriteBundle {
+                entity.insert_bundle(SpriteBundle {
                     sprite: Sprite {
                         color: Color::YELLOW,
                         custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
@@ -61,25 +74,35 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, mut board
                     transform: Transform::from_translation(pos - offset),
                     ..Default::default()
                 });
-            }
-
-            entity
-                .insert_bundle(SpriteBundle {
+            } else {
+                entity.insert_bundle(SpriteBundle {
                     sprite: Sprite {
-                        color: Color::GRAY,
+                        color: Color::DARK_GRAY,
                         custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
                         ..Default::default()
                     },
                     transform: Transform::from_translation(pos - offset),
                     ..Default::default()
-                })
-                .insert(coord);
+                });
+            }
 
-            board.covered_tiles.insert(coord, (tile, entity.id()));
+            entity.with_children(|parent| {
+                parent
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            color: Color::GRAY,
+                            custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                            ..Default::default()
+                        },
+                        transform: Transform::from_xyz(0., 0., 1.),
+                        ..Default::default()
+                    })
+                    .insert(coord)
+                    .insert(tile)
+                    .insert(Name::new("Tile"));
+            });
         }
     }
-
-    commands.spawn_batch(uncovered_tiles);
 }
 
 fn count_neighbour_bombs(bombs: &[Coord], coord: &Coord) -> Option<u8> {

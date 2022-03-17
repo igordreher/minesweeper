@@ -15,6 +15,7 @@ type Height = u16;
 #[derive(Default)]
 pub struct Board {
     pub covered_tiles: HashMap<Coord, (Tile, Entity)>,
+    pub marked_tiles: HashMap<Coord, Entity>,
 }
 
 impl Board {

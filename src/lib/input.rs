@@ -1,5 +1,5 @@
 use crate::lib::*;
-use bevy::{input::mouse::MouseButtonInput};
+use bevy::input::{mouse::MouseButtonInput, ElementState};
 
 pub fn send_click_events(
     windows: Res<Windows>,
@@ -13,14 +13,20 @@ pub fn send_click_events(
         if let Some(screen_pos) = window.cursor_position() {
             let window_size = Vec2::new(window.width() as f32, window.height() as f32);
             let coord = screen_to_coord(screen_pos, window_size);
-            match ev.button {
-                MouseButton::Left => {
-                    rev_ev.send(RevealTileEvent(coord));
+
+            if ev.state == ElementState::Pressed {
+                match ev.button {
+                    MouseButton::Left => {
+                        rev_ev.send(RevealTileEvent(coord));
+                    }
+                    MouseButton::Right => {
+                        #[cfg(feature = "debug")]
+                        println!("sending {:?}", coord);
+
+                        mark_ev.send(MarkTileEvent(coord));
+                    }
+                    _ => {}
                 }
-                MouseButton::Right => {
-                    mark_ev.send(MarkTileEvent(coord));
-                }
-                _ => {}
             }
         }
     }

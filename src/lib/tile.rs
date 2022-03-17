@@ -1,7 +1,6 @@
-use super::board::Board;
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
-#[derive(Debug)]
+#[derive(Debug, Component)]
 pub enum Tile {
     Empty,
     Bomb,
@@ -16,21 +15,33 @@ pub struct Coord {
 
 pub fn reveal_tile(
     mut commands: Commands,
-    mut rev_ev: EventReader<RevealTileEvent>,
-    mut board: ResMut<Board>,
+    tiles: Query<(&Tile, &Coord, Entity), Without<MarkedTile>>,
+    mut events: EventReader<RevealTileEvent>,
 ) {
-    for ev in rev_ev.iter() {
-        find_tiles_to_uncover(&mut commands, &ev.0, &mut board);
+    for ev in events.iter() {
+        #[cfg(feature = "debug")]
+        println!("Revealing tile {:?}", ev.0);
+
+        let mut map = tiles
+            .iter()
+            .map(|tile| (tile.1, (tile.0, tile.2)))
+            .collect();
+
+        find_tiles_to_uncover(&mut commands, &ev.0, &mut map);
     }
 }
 
-fn find_tiles_to_uncover(commands: &mut Commands, coord: &Coord, board: &mut Board) {
-    if let Some((tile, e)) = board.covered_tiles.remove(coord) {
+fn find_tiles_to_uncover(
+    commands: &mut Commands,
+    coord: &Coord,
+    covered_tiles: &mut HashMap<&Coord, (&Tile, Entity)>,
+) {
+    if let Some((tile, e)) = covered_tiles.remove(coord) {
         match tile {
             Tile::Empty => {
                 (*commands).entity(e).despawn();
                 for neighbour in coord.neighbours() {
-                    find_tiles_to_uncover(commands, &neighbour, board);
+                    find_tiles_to_uncover(commands, &neighbour, covered_tiles);
                 }
             }
             _ => {
@@ -40,8 +51,74 @@ fn find_tiles_to_uncover(commands: &mut Commands, coord: &Coord, board: &mut Boa
     }
 }
 
+pub fn mark_tile(
+    mut commands: Commands,
+    mut mark_ev: EventReader<MarkTileEvent>,
+    tiles: Query<(&Coord, Entity), Without<MarkedTile>>,
+) {
+    for event in mark_ev.iter() {
+        for (coord, entity) in tiles.iter() {
+            if &event.0 == coord {
+                #[cfg(feature = "debug")]
+                println!("Marking tile {:?}", event.0);
+                // let flag = commands
+                //     .spawn_bundle(SpriteBundle {
+                //         sprite: Sprite {
+                //             color: Color::BLUE,
+                //             custom_size: Some(Vec2::new(10., 10.)),
+                //             ..Default::default()
+                //         },
+                //         transform: Transform::from_xyz(0., 0., 2.),
+                //         ..Default::default()
+                //     })
+                //     .insert(Name::new("Flag"))
+                //     .id();
+
+                commands
+                    .entity(entity)
+                    .insert(MarkedTile)
+                    .with_children(|parent| {
+                        parent
+                            .spawn_bundle(SpriteBundle {
+                                sprite: Sprite {
+                                    color: Color::BLUE,
+                                    custom_size: Some(Vec2::new(10., 10.)),
+                                    ..Default::default()
+                                },
+                                transform: Transform::from_xyz(0., 0., 2.),
+                                ..Default::default()
+                            })
+                            .insert(Name::new("Flag"));
+                    });
+            }
+        }
+    }
+}
+
+pub fn unmark_tile(
+    mut commands: Commands,
+    mut mark_ev: EventReader<MarkTileEvent>,
+    tiles: Query<(&Coord, Entity), With<MarkedTile>>,
+) {
+    for event in mark_ev.iter() {
+        for (coord, entity) in tiles.iter() {
+            if &event.0 == coord {
+                #[cfg(feature = "debug")]
+                println!("unmarking tile {:?}", event.0);
+
+                commands
+                    .entity(entity)
+                    .remove::<MarkedTile>()
+                    .despawn_descendants();
+            }
+        }
+    }
+}
+
 pub struct RevealTileEvent(pub Coord);
 pub struct MarkTileEvent(pub Coord);
+#[derive(Component)]
+pub struct MarkedTile;
 
 impl From<Vec2> for Coord {
     fn from(vec: Vec2) -> Self {
