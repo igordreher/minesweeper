@@ -13,7 +13,6 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_event::<RevealTileEvent>()
             .add_event::<MarkTileEvent>()
-            .insert_resource(board::Board::default())
             .add_startup_system(create_board)
             .add_system(input::send_click_events)
             .add_system(reveal_tile)
@@ -22,10 +21,10 @@ impl Plugin for BoardPlugin {
     }
 }
 
-fn create_board(mut commands: Commands, board_set: Res<BoardSettings>) {
+fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, assets: Res<AssetServer>) {
     let (width, height) = board_set.board_size;
     let tile_size = board_set.tile_size;
-    let bombs = Board::gen_bombs((width, height), board_set.bomb_count);
+    let bombs = gen_bombs((width, height), board_set.bomb_count);
 
     let offset = Vec3::new(
         ((width - 1) as f32) * tile_size / 2.,
@@ -33,57 +32,62 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>) {
         0.,
     );
 
-    commands.spawn_bundle(SpriteBundle {
-        sprite: Sprite {
-            color: Color::BLACK,
-            custom_size: Some(Vec2::new(
-                width as f32 * tile_size,
-                height as f32 * tile_size,
-            )),
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(0., 0., 0.),
-        ..Default::default()
-    });
+    let covered_tile_asset = assets.load("covered_tile.png");
+    let bombs_asset = assets.load("bomb.png");
+    let font = assets.load("basis33.regular.ttf");
+
+    let text_style = TextStyle {
+        font,
+        font_size: tile_size - (tile_size / 3.),
+        color: Color::rgb_u8(255, 220, 1),
+        // color: Color::rgba_u8(9, 240, 120, 255),
+    };
+    let text_alignment = TextAlignment {
+        horizontal: HorizontalAlign::Center,
+        vertical: VerticalAlign::Center,
+    };
 
     for y in 0..height {
         for x in 0..width {
-            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 2.);
+            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 1.);
             let mut entity = commands.spawn();
             let coord = Coord { x, y };
             let mut tile = Tile::Empty;
 
+            entity.insert_bundle(SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(tile_size - 5., tile_size - 5.)),
+                    color: Color::rgb_u8(40, 50, 65),
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(pos - offset),
+                ..Default::default()
+            });
+
             if bombs.contains(&coord) {
                 tile = Tile::Bomb;
-                entity.insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::RED,
-                        custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                entity.with_children(|parent| {
+                    parent.spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::new(tile_size, tile_size)),
+                            ..Default::default()
+                        },
+                        texture: bombs_asset.clone(),
                         ..Default::default()
-                    },
-                    transform: Transform::from_translation(pos - offset),
-                    ..Default::default()
+                    });
                 });
             } else if let Some(count) = count_neighbour_bombs(&bombs, &coord) {
                 tile = Tile::BombNeighbour(count);
-                entity.insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::YELLOW,
-                        custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                entity.with_children(|parent| {
+                    parent.spawn_bundle(Text2dBundle {
+                        text: Text::with_section(
+                            count.to_string(),
+                            text_style.clone(),
+                            text_alignment,
+                        ),
+                        transform: Transform::from_xyz(0., 0., 1.),
                         ..Default::default()
-                    },
-                    transform: Transform::from_translation(pos - offset),
-                    ..Default::default()
-                });
-            } else {
-                entity.insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::DARK_GRAY,
-                        custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
-                        ..Default::default()
-                    },
-                    transform: Transform::from_translation(pos - offset),
-                    ..Default::default()
+                    });
                 });
             }
 
@@ -91,10 +95,10 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>) {
                 parent
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
-                            color: Color::GRAY,
-                            custom_size: Some(Vec2::new(tile_size - 1., tile_size - 1.)),
+                            custom_size: Some(Vec2::new(tile_size, tile_size)),
                             ..Default::default()
                         },
+                        texture: covered_tile_asset.clone(),
                         transform: Transform::from_xyz(0., 0., 1.),
                         ..Default::default()
                     })

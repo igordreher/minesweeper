@@ -17,6 +17,7 @@ fn main() {
         tile_size: 50.,
         bomb_count: 10,
     })
+    .insert_resource(ClearColor(Color::rgb_u8(14, 21, 28)))
     .add_plugins(DefaultPlugins)
     .add_plugin(lib::BoardPlugin);
 

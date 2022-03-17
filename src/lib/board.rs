@@ -1,5 +1,4 @@
-use super::{Coord, Tile};
-use bevy::prelude::*;
+use super::Coord;
 use bevy::utils::HashMap;
 use rand::{distributions::Uniform, thread_rng, Rng};
 
@@ -12,23 +11,18 @@ pub struct BoardSettings {
 type Width = u16;
 type Height = u16;
 
-#[derive(Default)]
-pub struct Board {
-    pub covered_tiles: HashMap<Coord, (Tile, Entity)>,
-    pub marked_tiles: HashMap<Coord, Entity>,
-}
+pub fn gen_bombs(board_size: (u16, u16), bomb_count: u16) -> Vec<Coord> {
+    let (width, height) = board_size;
 
-impl Board {
-    pub fn gen_bombs(board_size: (u16, u16), bomb_count: u16) -> Vec<Coord> {
-        let (width, height) = board_size;
+    let mut bombs = Vec::<Coord>::new();
+    let dist = TupleUniform::new(&(0, 0), &(width, height));
 
-        let mut bombs = Vec::<Coord>::new();
-        let dist = TupleUniform::new(&(0, 0), &(width, height));
+    fill_rand_unique_coords(&dist, &mut bombs, bomb_count.into());
 
-        fill_rand_unique_coords(&dist, &mut bombs, bomb_count.into());
+    #[cfg(feature = "debug")]
+    println!("Bombs at {:?}", bombs);
 
-        bombs
-    }
+    bombs
 }
 
 fn fill_rand_unique_coords(dist: &TupleUniform, vec: &mut Vec<Coord>, size: usize) {

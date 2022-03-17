@@ -1,3 +1,4 @@
+use super::board::*;
 use bevy::{prelude::*, utils::HashMap};
 
 #[derive(Debug, Component)]
@@ -55,24 +56,16 @@ pub fn mark_tile(
     mut commands: Commands,
     mut mark_ev: EventReader<MarkTileEvent>,
     tiles: Query<(&Coord, Entity), Without<MarkedTile>>,
+    assets: Res<AssetServer>,
+    board: Res<BoardSettings>,
 ) {
+    let flag = assets.load("flag.png");
+
     for event in mark_ev.iter() {
         for (coord, entity) in tiles.iter() {
             if &event.0 == coord {
                 #[cfg(feature = "debug")]
                 println!("Marking tile {:?}", event.0);
-                // let flag = commands
-                //     .spawn_bundle(SpriteBundle {
-                //         sprite: Sprite {
-                //             color: Color::BLUE,
-                //             custom_size: Some(Vec2::new(10., 10.)),
-                //             ..Default::default()
-                //         },
-                //         transform: Transform::from_xyz(0., 0., 2.),
-                //         ..Default::default()
-                //     })
-                //     .insert(Name::new("Flag"))
-                //     .id();
 
                 commands
                     .entity(entity)
@@ -81,10 +74,10 @@ pub fn mark_tile(
                         parent
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
-                                    color: Color::BLUE,
-                                    custom_size: Some(Vec2::new(10., 10.)),
+                                    custom_size: Some(Vec2::new(board.tile_size, board.tile_size)),
                                     ..Default::default()
                                 },
+                                texture: flag.clone(),
                                 transform: Transform::from_xyz(0., 0., 2.),
                                 ..Default::default()
                             })
