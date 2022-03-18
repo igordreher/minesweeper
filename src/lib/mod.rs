@@ -11,10 +11,13 @@ pub use board::BoardSettings;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_event::<RevealTileEvent>()
+        app.insert_resource(BoardState::default())
+            .add_event::<RevealTileEvent>()
             .add_event::<MarkTileEvent>()
+            .add_event::<GameOverEvent>()
             .add_startup_system(create_board)
             .add_system(input::send_click_events)
+            .add_system(game_over)
             .add_system(reveal_tile)
             .add_system(mark_tile)
             .add_system(unmark_tile);
@@ -40,7 +43,6 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, assets: R
         font,
         font_size: tile_size - (tile_size / 3.),
         color: Color::rgb_u8(255, 220, 1),
-        // color: Color::rgba_u8(9, 240, 120, 255),
     };
     let text_alignment = TextAlignment {
         horizontal: HorizontalAlign::Center,
@@ -49,7 +51,7 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, assets: R
 
     for y in 0..height {
         for x in 0..width {
-            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 1.);
+            let pos = Vec3::new((x as f32) * tile_size, (y as f32) * tile_size, 0.);
             let mut entity = commands.spawn();
             let coord = Coord { x, y };
             let mut tile = Tile::Empty;
@@ -72,6 +74,7 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, assets: R
                             custom_size: Some(Vec2::new(tile_size, tile_size)),
                             ..Default::default()
                         },
+                        transform: Transform::from_xyz(0., 0., 1.),
                         texture: bombs_asset.clone(),
                         ..Default::default()
                     });
@@ -99,7 +102,7 @@ fn create_board(mut commands: Commands, board_set: Res<BoardSettings>, assets: R
                             ..Default::default()
                         },
                         texture: covered_tile_asset.clone(),
-                        transform: Transform::from_xyz(0., 0., 1.),
+                        transform: Transform::from_xyz(0., 0., 2.),
                         ..Default::default()
                     })
                     .insert(coord)

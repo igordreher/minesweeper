@@ -18,6 +18,7 @@ pub fn reveal_tile(
     mut commands: Commands,
     tiles: Query<(&Tile, &Coord, Entity), Without<MarkedTile>>,
     mut events: EventReader<RevealTileEvent>,
+    mut game_over_event: EventWriter<GameOverEvent>,
 ) {
     for ev in events.iter() {
         #[cfg(feature = "debug")]
@@ -28,7 +29,7 @@ pub fn reveal_tile(
             .map(|tile| (tile.1, (tile.0, tile.2)))
             .collect();
 
-        find_tiles_to_uncover(&mut commands, &ev.0, &mut map);
+        find_tiles_to_uncover(&mut commands, &ev.0, &mut map, &mut game_over_event);
     }
 }
 
@@ -36,14 +37,19 @@ fn find_tiles_to_uncover(
     commands: &mut Commands,
     coord: &Coord,
     covered_tiles: &mut HashMap<&Coord, (&Tile, Entity)>,
+    event: &mut EventWriter<GameOverEvent>,
 ) {
     if let Some((tile, e)) = covered_tiles.remove(coord) {
         match tile {
             Tile::Empty => {
                 (*commands).entity(e).despawn();
+
                 for neighbour in coord.neighbours() {
-                    find_tiles_to_uncover(commands, &neighbour, covered_tiles);
+                    find_tiles_to_uncover(commands, &neighbour, covered_tiles, event);
                 }
+            }
+            Tile::Bomb => {
+                event.send(GameOverEvent(e));
             }
             _ => {
                 (*commands).entity(e).despawn();
@@ -110,6 +116,8 @@ pub fn unmark_tile(
 
 pub struct RevealTileEvent(pub Coord);
 pub struct MarkTileEvent(pub Coord);
+pub struct GameOverEvent(pub Entity);
+
 #[derive(Component)]
 pub struct MarkedTile;
 

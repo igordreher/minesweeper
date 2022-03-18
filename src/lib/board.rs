@@ -1,11 +1,16 @@
-use super::Coord;
-use bevy::utils::HashMap;
+use super::*;
+use bevy::{prelude::EventReader, utils::HashMap};
 use rand::{distributions::Uniform, thread_rng, Rng};
 
 pub struct BoardSettings {
     pub tile_size: f32,
     pub board_size: (Width, Height),
     pub bomb_count: u16,
+}
+
+#[derive(Default)]
+pub struct BoardState {
+    pub game_over: bool,
 }
 
 type Width = u16;
@@ -23,6 +28,29 @@ pub fn gen_bombs(board_size: (u16, u16), bomb_count: u16) -> Vec<Coord> {
     println!("Bombs at {:?}", bombs);
 
     bombs
+}
+
+pub fn game_over(
+    mut commands: Commands,
+    mut events: EventReader<GameOverEvent>,
+    settings: Res<BoardSettings>,
+    mut state: ResMut<BoardState>,
+) {
+    for event in events.iter() {
+        #[cfg(feature = "debug")]
+        println!("Game Over");
+
+        commands.entity(event.0).insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(settings.tile_size - 5., settings.tile_size - 5.)),
+                color: Color::rgb_u8(255, 33, 44),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0., 0., 1.),
+            ..Default::default()
+        });
+        state.game_over = true;
+    }
 }
 
 fn fill_rand_unique_coords(dist: &TupleUniform, vec: &mut Vec<Coord>, size: usize) {
