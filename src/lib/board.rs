@@ -39,6 +39,10 @@ pub fn game_over(
     for event in events.iter() {
         #[cfg(feature = "debug")]
         println!("Game Over");
+        if state.game_over {
+            commands.entity(event.0).despawn();
+            return;
+        }
 
         commands.entity(event.0).insert_bundle(SpriteBundle {
             sprite: Sprite {

@@ -7,11 +7,7 @@ pub fn send_click_events(
     mut rev_ev: EventWriter<RevealTileEvent>,
     mut mark_ev: EventWriter<MarkTileEvent>,
     board: Res<BoardSettings>,
-    state: Res<BoardState>,
 ) {
-    if state.game_over {
-        return;
-    }
     let window = windows.get_primary().unwrap();
 
     for ev in click.iter() {
